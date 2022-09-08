@@ -28,7 +28,7 @@ namespace WebApi.Models
             if (!optionsBuilder.IsConfigured)
             {
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. See http://go.microsoft.com/fwlink/?LinkId=723263 for guidance on storing connection strings.
-                optionsBuilder.UseSqlServer("Integrated Security=SSPI;Persist Security Info=False;Initial Catalog=ConnectedOffice;Data Source=QUENTIN\\SQLEXPRESS");
+                optionsBuilder.UseSqlServer("Server=tcp:qtpcmpg323sql.database.windows.net,1433;Initial Catalog=Project2db-dev;Persist Security Info=False;User ID=serveradmin;Password=Serv_Project2;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;");
             }
         }
 
