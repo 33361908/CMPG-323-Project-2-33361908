@@ -1,8 +1,9 @@
+using WebApi;
+using WebApi.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -12,6 +13,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using WebApi.Models;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Microsoft.OpenApi;
+using Microsoft.OpenApi.Models;
+
+
 
 namespace WebApi
 {
@@ -28,8 +38,72 @@ namespace WebApi
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllers();
-            services.AddDbContext<ConnectedOfficeContext>(options => options.UseSqlServer("name=ConnectionStrings:DefaultConnection"));
-            services.AddSwaggerGen(options => { options.SwaggerDoc("v2", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "MyTest Demo API", Version = "v2", Description = "Test demo for students", }); });
+
+            // For Entity Framework  
+            //services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(Configuration.GetConnectionString("ConnStr")));
+            services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer("name=ConnectionStrings:DefaultConnection"));
+
+            services.AddSwaggerGen(c => {
+                    c.SwaggerDoc("v1.0.0", new OpenApiInfo
+                    {
+                        Title = "33361908 - WebAPI",
+                        Version = "v1.0.0"
+                    });
+                c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme()
+                    {
+                        Name = "Authorization",
+                        Type = SecuritySchemeType.ApiKey,
+                        Scheme = "Bearer",
+                        BearerFormat = "JWT",
+                        In = ParameterLocation.Header,
+                        Description = "JWT Authorization header using the Bearer scheme. \r\n\r\n Enter 'Bearer' [space] and then your token in the text input below.\r\n\r\nExample: \"Bearer 1safsfsdfdfd\"",
+                    });
+                c.AddSecurityRequirement(new OpenApiSecurityRequirement {
+                    {
+                        new OpenApiSecurityScheme {
+                            Reference = new OpenApiReference {
+                                Type = ReferenceType.SecurityScheme,
+                                    Id = "Bearer"
+                            }
+                        },
+                        new string[] {}
+                    }
+                    });
+                });
+
+           // services.AddSwaggerGen(options => { options.SwaggerDoc("v1.0.0", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "33361908 - WebAPI", Version = "v1.0.0", Description = "Project 2 - 323" }); });
+
+            // For Identity  
+            services.AddIdentity<ApplicationUser, IdentityRole>()
+                .AddEntityFrameworkStores<ApplicationDbContext>()
+                .AddDefaultTokenProviders();
+
+            // Adding Authentication  
+            services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+
+            // Adding Jwt Bearer  
+            .AddJwtBearer(options =>
+             {
+                 options.SaveToken = true;
+                 options.RequireHttpsMetadata = false;
+                 options.TokenValidationParameters = new TokenValidationParameters()
+                 {
+                     ValidateIssuer = true,
+                     ValidateAudience = true,
+                     ValidAudience = Configuration["JWT:ValidAudience"],
+                     ValidIssuer = Configuration["JWT:ValidIssuer"],
+                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["JWT:Secret"]))
+                 };
+             });
+
+
+
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -38,21 +112,17 @@ namespace WebApi
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
-
             }
-
             app.UseHttpsRedirection();
-
             app.UseRouting();
-
+            app.UseAuthentication();
             app.UseAuthorization();
-
-            app.UseEndpoints(endpoints =>
+            app.UseEndpoints(endpoints => 
             {
                 endpoints.MapControllers();
             });
             app.UseSwagger();
-            app.UseSwaggerUI(options => options.SwaggerEndpoint("/swagger/v2/swagger.json", "MyTest Demo"));
+            app.UseSwaggerUI(options => options.SwaggerEndpoint("/swagger/v1.0.0/swagger.json", "33361908-WebAPI"));
         }
     }
 
